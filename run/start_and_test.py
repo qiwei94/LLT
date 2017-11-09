@@ -1,9 +1,4 @@
-"""Custom topology example
-Two directly connected switches plus a host for each switch:
-   host --- switch --- switch --- host
-Adding the 'topos' dict with a key/value pair to generate our newly defined
-topology enables one to pass in '--topo=mytopo' from the command line.
-"""
+
 
 from mininet.topo import Topo
 from mininet.node import CPULimitedHost
@@ -17,23 +12,12 @@ from mininet.cli import CLI
 from mininet.node import RemoteController
 from mininet.node import OVSSwitch
 
-from argparse import ArgumentParser
+
 
 import sys
 import os
 
 from subprocess import Popen,PIPE
-#from time import sleep,time
-#from multiprocessing import Process
-#from argparse import ArgumentParser
-
-#from monitor import monitor_qlen
-#import termcolor as T
-
-#import sys
-#import os
-#import math
-#from math import sqrt
 
 
 enable_ecn = 1
@@ -55,59 +39,21 @@ class MyTopo( Topo ):
         #ECN in Linux is implemented using RED. The below set RED parameters 
         #to maintain K=20 packets where a packet size if 1500 bytes and we mark
         #packets with a probability of 1.
-        self.red_params = {'min':6000, #K=20pkts
-                           'max':6001,
-                           'avpkt':1500,
-                           'burst':5,
-                           'prob':1,
-                           'limit':150000,
-                         }
 
-        #switch3=self.addSwitch('s4')
         switch3=self.addSwitch('s3')
         switch2=self.addSwitch('s2')
         switch1=self.addSwitch('s1')
-
-
-
-        switchConfig = {'enable_ecn': enable_ecn, 
-                        'enable_red': enable_ecn, 
-                        'red_params': self.red_params \
-                                    if enable_ecn is 1 else None,
-                        'bw':bw_receiver,
-                        'delay':delay,
-                        'max_queue_size':maxq}
-
-        switchConfig2 = {'enable_ecn': 0, 
-                        'enable_red': 0, 
-                        'bw':bw_receiver,
-                        'delay':delay,
-                        'max_queue_size':maxq}
-
-
-        senderConfig = {'bw':bw_sender, 
-                        'delay':delay,
-                        'max_queue_size':maxq}
-
-        receiverConfig = {'bw':bw_receiver, 
-                          'delay':delay,
-                          'max_queue_size':maxq}
-
                           
         # Add hosts and switches
         Host0 = self.addHost("h0")
         Host1 = self.addHost("h1")
         Host2 = self.addHost( 'h2' )
-        #Host3 = self.addHost( 'h3' )
-        #Host4 = self.addHost( 'h4' )
-        #Host5 = self.addHost( 'h5' )
-
-        # Add links
-        """
-        self.addLink(switch2, switch3, cls=Link, cls1=TCIntf, cls2=TCIntf, 
-                      params1=receiverConfig, params2=switchConfig)
-        """
+        Host2 = self.addHost( 'h3' )
         
+
+
+
+
         self.addLink(switch2,switch3)
         self.addLink(Host1,switch3)
         self.addLink(Host2,switch3)
@@ -141,6 +87,11 @@ def set_controller():
     #os.system("sudo ovs-vsctl set-controller s4 tcp:192.168.50.8:6633")
     #os.system("sudo ovs-vsctl set-controller s5 tcp:192.168.50.8:6633")      
 
+
+
+
+
+    """
     os.system("ovs-vsctl set-manager ptcp:6632")
     os.system("sudo ifconfig eth1 up")
     os.system("sudo ifconfig eth2 up")
@@ -149,6 +100,7 @@ def set_controller():
     os.system("sudo ovs-vsctl add-port s1 eth1")
     os.system("sudo ovs-vsctl add-port s2 eth2")
     #os.system("sudo ovs-vsctl add-port s3 eth4")
+    """
     os.system("sysctl -w net.ipv4.tcp_ecn=1")
     os.system("echo ECN enable")    
     os.system("sysctl -w net.ipv4.tcp_congestion_control=dctcp")
@@ -158,29 +110,6 @@ def set_controller():
     os.system("echo now see ecn enable :")
     os.system("sudo cat /proc/sys/net/ipv4/tcp_ecn")
 
-
-def set_PRIO(inter_face="s0-eth1"):
-    #os.system("sudo tc qdisc del dev %s root" % inter_face)
-    os.system("sudo tc qdisc add dev %s root handle 1: prio" % inter_face)
-    #os.system("sudo tc qdisc add dev %s parent 1:1 handle 10: pfifo limit 100" % inter_face)
-    #os.system("sudo tc qdisc add dev %s parent 1:2 handle 20: pfifo limit 100" % inter_face)
-    #os.system("sudo tc qdisc add dev %s parent 1:3 handle 30: pfifo limit 100" % inter_face)
-    os.system("sudo tc filter add dev %s protocol ip parent 1: prio 1 u32 match ip dsfield 240 0xfc flowid 1:1" % inter_face)
-    os.system("sudo tc filter add dev %s protocol ip parent 1: prio 1 u32 match ip dsfield 160 0xfc flowid 1:2" % inter_face)
-    os.system("sudo tc filter add dev %s protocol ip parent 1: prio 2 u32 match ip dst 0.0.0.0/0 flowid 1:3" % inter_face)
-
-def show_tc_setting(inter_face="s0-eth1"):
-    os.system("echo tc setting is : ")
-    os.system("echo #######################################################################")
-    os.system("echo qdisc ::::::::::::::: ")
-    os.system("sudo tc -s qdisc show dev %s" % inter_face)
-    os.system("echo #######################################################################")
-    os.system("echo class ::::::::::::::: ")
-    os.system("sudo tc -s class show dev %s" % inter_face)
-    os.system("echo #######################################################################")
-    os.system("echo filter ::::::::::::::: ")
-    os.system("sudo tc -s filter show dev %s parent 3:" % inter_face)
-    os.system("echo #######################################################################")
 
 ### can set the ECN and the queue num
 ### since the PRIO SETTINHG is every where , the ECN shold be after the PRIO QDISC 
@@ -202,18 +131,10 @@ def set_ECN_prio(inter_face="s0-eth1"):
 
     os.system("sudo tc qdisc add dev %s parent 2: handle 3: prio" % inter_face)
 
-    #os.system("sudo tc qdisc add dev %s parent 3:1 handle 10: pfifo limit 100" % inter_face)
-    #os.system("sudo tc qdisc add dev %s parent 3:2 handle 20: pfifo limit 100" % inter_face)
-    #os.system("sudo tc qdisc add dev %s parent 3:3 handle 30: pfifo limit 100" % inter_face)
-
     os.system("sudo tc filter add dev %s protocol ip parent 3: prio 1 u32 match ip dsfield 240 0xfc flowid 3:1" % inter_face)
     os.system("sudo tc filter add dev %s protocol ip parent 3: prio 1 u32 match ip dsfield 160 0xfc flowid 3:2" % inter_face)
     os.system("sudo tc filter add dev %s protocol ip parent 3: prio 2 u32 match ip dst 0.0.0.0/0    flowid 3:3" % inter_face)
     print "filter end"
-
-
-
-
 
 
 def clean_qos():
