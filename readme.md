@@ -1,8 +1,10 @@
 # steps
 step 1: 
 create the topo you need in function MyTopo( Topo )
+
 step 2: 
 set the controller address at the beginning of the file
+
 step 3:
 sudo pyhton run/start_and_test.py
 
