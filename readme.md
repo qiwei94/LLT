@@ -11,6 +11,8 @@ sudo pyhton run/start_and_test.py
 step 4:
 use the add_rate_limit.py in controller to add rate-limit
 	
+	turn into controller/add_rate_limit.py
+	
 	step 0:
 	change the user_name , passwd and user_ip at the top of the file
 
