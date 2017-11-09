@@ -7,8 +7,10 @@ import re
 from subprocess import Popen,PIPE
 
 user_name="root"
-paasswd="1"
+paasswd=""
 user_ip="192.168.50.61"
+
+
 convenient_privilege=" echo "+paasswd+"|"
 link_cmd="ssh -t "+user_name+"@"+user_ip
 #link_cmd="ssh "+user_name+"@"+user_ip+convenient_privilege
@@ -207,9 +209,10 @@ def delete_flow_rate_limit(dev="s1-eth1",priority="0",flow_id="0"):
 
 def main():
     #ssh_link()
+    #example
     add_htb("s1-eth1")
     
-    print map_filter_flow_id
+    #print map_filter_flow_id
     
     add_flow_rate_limit("s1-eth1",priority=0,flow_id=1,rate=150,\
     					ip_src="10.0.0.2",\
