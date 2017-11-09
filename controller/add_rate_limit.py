@@ -249,7 +249,7 @@ def main():
     					protocol="TCP")
     
 
-    #delete_flow_rate_limit("s1-eth1",priority=0,flow_id=7)
+    delete_flow_rate_limit("s1-eth1",priority=0,flow_id=7)
 	
     #show_qdisc("s1-eth1")
     #show_class("s1-eth1")
