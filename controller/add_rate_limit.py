@@ -8,8 +8,8 @@ from subprocess import Popen,PIPE
 
 user_name="root"
 paasswd=""
-user_ip="192.168.50.61"
-
+#user_ip="192.168.50.61"
+user_ip="127.0.0.1"
 
 convenient_privilege=" echo "+paasswd+"|"
 link_cmd="ssh -t "+user_name+"@"+user_ip
@@ -18,9 +18,11 @@ max_flow_num=100
 default_rate=1000
 prio_queue_num=3
 basic_parent="3:"
+basic_parent_num=3
 map_filter={}
 map_filter_flow_id={}
 basic_filter_num=49152
+default_low_filter_prio=100
 
 def ssh_link():
     result=os.system("%s sudo -S ls" % link_cmd)
@@ -62,14 +64,28 @@ def add_htb(dev="s1-eth1"):
 		os.system(cmd)
 		map_filter[handle] = 0
 		time.sleep(0.1)
-		
-		#cmd=cmd+" && "+tmp_cmd
-		
-	"""
-	cmd=link_cmd+" "+cmd
-	print cmd
-	os.system(cmd)
-	"""
+
+	htb_id=basic_parent_num+prio_queue_num
+	flow_id=max_flow_num+1
+	parent=str(htb_id)+":"
+	classid=parent+str(flow_id)
+	flowid=classid
+	rate=default_rate
+	filter_prio=default_low_filter_prio
+	ip_src="0.0.0.0"
+	src_ip_mask="/0"
+	class_cmd="sudo tc class add dev "+dev+" parent "+parent+" classid "+classid+" htb rate "+str(rate)+"mbit burst 15k"
+	filter_cmd="sudo -S tc filter add dev "+dev+" protocol ip parent "+parent+" prio "+str(filter_prio)+" u32"+\
+				" match ip src "+ip_src+src_ip_mask +\
+				" flowid "+flowid
+	print "class_cmd="+class_cmd
+	print "filter_cmd"+filter_cmd
+	class_cmd=link_cmd+" "+class_cmd
+	filter_cmd=link_cmd+" "+filter_cmd
+	os.system(class_cmd)
+	os.system(filter_cmd)
+	
+
 
 def add_flow_rate_limit(dev="s1-eth1",priority="0",flow_id="0",rate="10",ip_src="0.0.0.0",ip_dst="0.0.0.0",port_src="0",port_dst="0",protocol="TCP",filter_prio=0):
 	"""
@@ -213,7 +229,7 @@ def main():
     add_htb("s1-eth1")
     
     #print map_filter_flow_id
-    
+    """
     add_flow_rate_limit("s1-eth1",priority=0,flow_id=1,rate=150,\
     					ip_src="10.0.0.2",\
     					ip_dst="10.0.0.1",\
@@ -253,7 +269,7 @@ def main():
     
 
     delete_flow_rate_limit("s1-eth1",priority=0,flow_id=7)
-	
+	"""
     #show_qdisc("s1-eth1")
     #show_class("s1-eth1")
     #show_filter("s1-eth1")
