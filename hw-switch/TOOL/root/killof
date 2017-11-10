@@ -1,0 +1,4 @@
+#!/bin/ash
+
+pkill ofdatapath
+pkill ofprotocol

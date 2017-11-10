@@ -1,0 +1,7 @@
+#!/bin/ash
+
+cd ofswitch-hwtable
+./udatapath/ofdatapath --datapath-id=000000000028 --interfaces=eth1,eth2,eth3,eth4 ptcp:6632 --no-slicing &
+./secchan/ofprotocol  tcp:127.0.0.1:6632 tcp:10.0.0.1:6633 --inactivity-probe=90 &
+
+echo "--------------------- openflow started ---------------------"

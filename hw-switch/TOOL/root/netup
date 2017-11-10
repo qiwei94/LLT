@@ -1,0 +1,33 @@
+#!/bin/ash
+
+echo "@++< Networking Initial ..."
+echo "@++< Please wait ..."
+# Due to driver issue, networking interfaces should be set up, then down at first.
+ifconfig eth1 up
+ifconfig eth2 up
+ifconfig eth3 up
+ifconfig eth4 up
+
+sleep 5
+
+ifconfig eth1 down
+ifconfig eth2 down
+ifconfig eth3 down
+ifconfig eth4 down
+
+sleep 5
+
+echo "@++< Initial Done"
+ 
+
+ifconfig eth0 hw ether 00:0a:35:05:01:23
+ifconfig eth0 192.168.2.162/24
+route add default gw 192.168.2.1 
+
+ifconfig eth0 up
+ 
+ifconfig eth1 up
+ifconfig eth2 up
+ifconfig eth3 up
+ifconfig eth4 up
+ifconfig lo up

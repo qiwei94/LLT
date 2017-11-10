@@ -1,0 +1,8 @@
+#!/bin/ash
+
+echo "-------------------init network--------------------"
+ifconfig eth1 down 
+ifconfig eth2 down
+ifconfig eth3 down
+ifconfig eth4 down
+echo "------------network configuration done-------------"
