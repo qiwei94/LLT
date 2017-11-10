@@ -50,3 +50,16 @@ use the add_rate_limit.py in controller to add rate-limit
 
 	step 3: delete some rate limit if need
 	delete_flow_rate_limit("s1-eth1",priority=0,flow_id=7)
+
+
+ 
+step 5: add a flow entry to set the dscp of the packet
+it is easy , just use openflow mark action:
+dscp 60 , priority 0, the highest priority
+dscp 40 , priority 1
+dscp 20 , priority 2
+
+note: 
+we put the dscp_mark action flow entry in table 0,
+put the transmit action in table 2
+the default flow is in the prio_queue 2 , and set a htb of 1000M for it
