@@ -121,6 +121,12 @@ def set_each_interface(net):
                 #switch_interface.append(str(intf))
                 set_ECN_prio(str(intf))
 
+
+def test():
+    return
+
+
+
 def clean_qos():
     os.system("sudo ovs-vsctl --all destroy QoS")
     os.system("sudo ovs-vsctl --all destroy Queue")
