@@ -15,13 +15,12 @@ from mininet.node import OVSSwitch
 from mininet.util import ( quietRun, dumpNodeConnections,dumpPorts,dumpNetConnections )
 
 
-
 import sys
 import os
-import time
+from time import sleep, time
 
 from subprocess import Popen,PIPE
-
+from argparse import ArgumentParser
 
 enable_ecn = 1
 enable_red = 1
@@ -32,6 +31,23 @@ bw_sender = 1000
 controller_address="192.168.50.8:6633"
 
 
+parser = ArgumentParser(description="LLT")
+parser.add_argument('--per_test', '-t',
+                    dest="per_test",
+                    type=int,
+                    help="0:create 1:create_and_test",
+                    default=0)
+
+parser.add_argument('--dir', '-d',
+                    help="Directory to store outputs",
+                    default="test_result/")
+
+parser.add_argument('--set_file', '-s',
+                    help="Directory store the setting file",
+                    default="~/LLT/controller/add_rate_limit.py")
+
+
+args = parser.parse_args()
 
 class MyTopo( Topo ):
     "Simple topology example."
@@ -59,9 +75,9 @@ class MyTopo( Topo ):
 
         self.addLink(switch1,switch0)
         self.addLink(switch1,switch2)
-        self.addLink(Host0,switch0)
+        self.addLink(Host2,switch0)
         self.addLink(Host1,switch0)
-        self.addLink(Host2,switch1)
+        self.addLink(Host0,switch1)
         self.addLink(Host3,switch2)
         #self.addLink(Host0,Host1)
 
@@ -107,10 +123,10 @@ def set_ECN_prio(inter_face="s0-eth1"):
     os.system("sudo tc qdisc add dev %s parent 2: handle 3: prio" % inter_face)
 
     os.system("sudo tc filter add dev %s protocol ip parent 3: prio 1 u32 match ip dsfield 240 0xfc flowid 3:1" % inter_face)
-    os.system("sudo tc filter add dev %s protocol ip parent 3: prio 1 u32 match ip dsfield 160 0xfc flowid 3:2" % inter_face)
-    os.system("sudo tc filter add dev %s protocol ip parent 3: prio 2 u32 match ip dst 0.0.0.0/0    flowid 3:3" % inter_face)
+    os.system("sudo tc filter add dev %s protocol ip parent 3: prio 2 u32 match ip dsfield 160 0xfc flowid 3:2" % inter_face)
+    os.system("sudo tc filter add dev %s protocol ip parent 3: prio 3 u32 match ip dst 0.0.0.0/0    flowid 3:3" % inter_face)
     print inter_face+" setting end"
-
+    
 
 def set_each_interface(net):
     switch_interface=[]    
@@ -122,8 +138,45 @@ def set_each_interface(net):
                 set_ECN_prio(str(intf))
 
 
-def test():
+def perf_test(net):
+    net.pingAll()
+    result=net.pingAll()
+    print "***********************the result = ",result
+    while result!=0.0:
+        print "not ping all,check your flow entry"
+        result=net.pingAll()
+
+    os.system("cd %s && sudo rm -rf *" % args.dir)
+
+    print "setting the flow htb , priority"
+    os.system("sudo python %s" % args.set_file)
+
+
+    h0=net.get('h0')
+    print "Starting iperf server..."
+    server = h0.popen("iperf -s -w 16m > %s/iperf-server.txt " %(args.dir),shell=True)
+    print "start sockperf ..."
+    sockperf_server = h0.popen("sockperf server -p 5002 --tcp")
+    sleep(2)
+    h1=net.get('h1')
+    print "start iperf clinet h1"
+    clinet = h1.popen("iperf -c %s -p 5001 -t 20 > %s/iperf_h1.txt " %(h0.IP(),args.dir), 
+                      shell=True)
+    sockperf_h1_client = h1.popen("sockperf pp -i %s -t 5 -p 5002 --tcp > %s/sockperf.txt" %(h0.IP(),args.dir),shell=True)
+
+    h2=net.get('h2')
+    print "start iperf clinet h2"
+    clinet = h2.popen("iperf -c %s -p 5003 -t 20 > %s/iperf_h2.txt " %(h0.IP(),args.dir), 
+                      shell=True)
+
+    time_count=0
+    while time_count<50:
+        sleep(1)
+        time_count=time_count+1
+
     return
+
+
 
 
 
@@ -131,7 +184,7 @@ def clean_qos():
     os.system("sudo ovs-vsctl --all destroy QoS")
     os.system("sudo ovs-vsctl --all destroy Queue")
 
-def genericTest(topo):
+def genericCreate(topo):
     clean_qos()
     os.system("sudo mn -c")
     print "clean qos and queue"
@@ -140,14 +193,17 @@ def genericTest(topo):
     print "hahahah"
     set_controller(switch_num=len(net.switches))
     set_each_interface(net)
-
-    CLI(net)
-
+    if (args.per_test):
+        perf_test(net)
+    else:
+        CLI(net)
     net.stop()
+
+
 
 def main():
     topo = MyTopo()
-    genericTest(topo)   
+    genericCreate(topo)   
 
 if __name__ == '__main__':
     main()
